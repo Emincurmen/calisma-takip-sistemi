@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, TextField, Checkbox, FormControlLabel } from "@mui/material";
 import axios from "axios";
+import moment from "moment-timezone"; // moment-timezone'u doğrudan import edin.
+
+console.log(moment().tz("Europe/Istanbul").format("D MMM YYYY HH:mm"))
 
 const API_URL = "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
 
