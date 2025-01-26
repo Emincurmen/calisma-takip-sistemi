@@ -1,11 +1,20 @@
 import * as React from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { useMediaQuery } from "@mui/material";
-import "./App.css"; // Stil dosyasını dahil ediyoruz
+import "./App.css";
 
 export default function App() {
-  // Ekran boyutuna göre mobil olup olmadığını kontrol et
   const isMobile = useMediaQuery("(max-width:600px)");
+
+  const [selectedRows, setSelectedRows] = React.useState({});
+
+  // Checkbox değişimi olduğunda çalışacak fonksiyon
+  const handleCheckboxChange = (id) => {
+    setSelectedRows((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   return (
     <div
@@ -17,30 +26,44 @@ export default function App() {
     >
       <DataGrid
         rows={rows}
-        columns={columns}
+        columns={columns(handleCheckboxChange, selectedRows)}
         disableColumnMenu
         pageSize={5}
         rowsPerPageOptions={[5, 10]}
-        getRowHeight={() => "auto"} // Satır yüksekliğini otomatik yap
+        getRowHeight={() => "auto"}
         initialState={{
           pagination: {
             paginationModel: { pageSize: 5 },
           },
         }}
-        getRowClassName={() => "custom-row"} // Tüm satırlara özel sınıf ekle
+        getRowClassName={(params) =>
+          selectedRows[params.id] ? "strikethrough" : ""
+        }
       />
     </div>
   );
 }
 
-const columns = [
+const columns = (handleCheckboxChange, selectedRows) => [
+  {
+    field: "checkbox",
+    headerName: "",
+    width: 50,
+    renderCell: (params) => (
+      <input
+        type="checkbox"
+        checked={!!selectedRows[params.id]}
+        onChange={() => handleCheckboxChange(params.id)}
+      />
+    ),
+  },
   {
     field: "name",
     headerName: "Name",
     flex: 1,
     editable: false,
     align: "center",
-    headerAlign: "center", 
+    headerAlign: "center",
   },
   {
     field: "dateCreated",
@@ -49,7 +72,7 @@ const columns = [
     flex: 1,
     editable: false,
     align: "center",
-    headerAlign: "center", 
+    headerAlign: "center",
   },
   {
     field: "dersDetay",
@@ -58,7 +81,7 @@ const columns = [
     flex: 1.5,
     editable: false,
     align: "center",
-    headerAlign: "center", 
+    headerAlign: "center",
   },
 ];
 
@@ -96,3 +119,9 @@ const rows = [
     dersDetay: "Critical Thinking",
   },
 ];
+
+// CSS ile üstü çizme efekti
+document.styleSheets[0].insertRule(
+  `.strikethrough .MuiDataGrid-cell { text-decoration: line-through; }`,
+  document.styleSheets[0].cssRules.length
+);
