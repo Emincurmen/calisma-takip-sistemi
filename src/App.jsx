@@ -1,127 +1,147 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { useMediaQuery } from "@mui/material";
-import "./App.css";
+import { Button, TextField, Checkbox, FormControlLabel } from "@mui/material";
+import axios from "axios";
 
-export default function App() {
-  const isMobile = useMediaQuery("(max-width:600px)");
+const API_URL = "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
 
-  const [selectedRows, setSelectedRows] = React.useState({});
+const App = () => {
+  const [data, setData] = useState([]);
+  const [formData, setFormData] = useState({
+    name: "",
+    dateCreated: new Date().toLocaleString("tr-TR"),
+    dersDetay: "",
+    isSelected: false,
+  });
+  const [selectedId, setSelectedId] = useState(null);
 
-  // Checkbox değişimi olduğunda çalışacak fonksiyon
-  const handleCheckboxChange = (id) => {
-    setSelectedRows((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleAddUser = async () => {
+    try {
+      const response = await axios.post(API_URL, formData);
+      setData([...data, response.data]);
+      setFormData({
+        name: "",
+        dateCreated: new Date().toLocaleString("tr-TR"),
+        dersDetay: "",
+        isSelected: false,
+      });
+    } catch (error) {
+      console.error("Error adding user:", error);
+    }
+  };
+
+  const handleCheckboxChange = (id) => {
+    const updatedData = data.map((row) => {
+      if (row.id === id) {
+        row.isSelected = !row.isSelected;
+      }
+      return row;
+    });
+
+    setData(updatedData);
+    setSelectedId(id);
+
+    // Update the selection state on the server
+    axios.patch(`${API_URL}?id=${id}`, { isSelected: !data.find((row) => row.id === id).isSelected })
+      .then(response => {
+        console.log("Updated user:", response.data);
+      })
+      .catch(error => {
+        console.error("Error updating user:", error);
+      });
+  };
+
+  const columns = [,
+    {
+      field: "checkbox",
+      headerName: "Seçim",
+      width: 100,
+      renderCell: (params) => (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={params.row.isSelected}
+              onChange={() => handleCheckboxChange(params.row.id)}
+            />
+          }
+        />
+      ),
+    },
+    { field: "id", headerName: "ID", width: 90 },
+    { field: "name", headerName: "Ad Soyad", width: 200 },
+    { field: "dateCreated", headerName: "Oluşturma Tarihi", width: 200 },
+    {
+      field: "dersDetay",
+      headerName: "Ders Detayı",
+      width: 250,
+      renderCell: (params) => (
+        <div style={{ textDecoration: params.row.isSelected ? "line-through" : "none" }}>
+          {params.row.dersDetay}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div
-      style={{
-        height: "auto",
-        width: "100%",
-        overflowX: "auto",
-      }}
-    >
-      <DataGrid
-        rows={rows}
-        columns={columns(handleCheckboxChange, selectedRows)}
-        disableColumnMenu
-        pageSize={5}
-        rowsPerPageOptions={[5, 10]}
-        getRowHeight={() => "auto"}
-        initialState={{
-          pagination: {
-            paginationModel: { pageSize: 5 },
-          },
-        }}
-        getRowClassName={(params) =>
-          selectedRows[params.id] ? "strikethrough" : ""
-        }
-      />
+    <div style={{ padding: 20, maxWidth: "375px", margin: "0 auto" }}>
+      <h1>Kullanıcı Yönetim Sistemi</h1>
+
+      <div style={{ marginBottom: 20, display: "flex", gap: 10, flexDirection: "column" }}>
+        <TextField
+          label="Ad Soyad"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          fullWidth
+        />
+        <TextField
+          label="Ders Detayı"
+          name="dersDetay"
+          value={formData.dersDetay}
+          onChange={handleInputChange}
+          fullWidth
+        />
+        <Button variant="contained" onClick={handleAddUser} fullWidth>
+          Kullanıcı Ekle
+        </Button>
+      </div>
+
+      <div style={{ height: 400, width: "100%" }}>
+        <DataGrid rows={data} columns={columns} pageSize={5} disableSelectionOnClick />
+      </div>
+
+      {selectedId && (
+        <div style={{ marginTop: 20 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleCheckboxChange(selectedId)}
+            fullWidth
+          >
+            Değişikliği Gönder
+          </Button>
+        </div>
+      )}
     </div>
   );
-}
+};
 
-const columns = (handleCheckboxChange, selectedRows) => [
-  {
-    field: "checkbox",
-    headerName: "",
-    width: 50,
-    renderCell: (params) => (
-      <input
-        type="checkbox"
-        checked={!!selectedRows[params.id]}
-        onChange={() => handleCheckboxChange(params.id)}
-      />
-    ),
-  },
-  {
-    field: "name",
-    headerName: "Name",
-    flex: 1,
-    editable: false,
-    align: "center",
-    headerAlign: "center",
-  },
-  {
-    field: "dateCreated",
-    headerName: "Date Created",
-    type: "number",
-    flex: 1,
-    editable: false,
-    align: "center",
-    headerAlign: "center",
-  },
-  {
-    field: "dersDetay",
-    headerName: "Konu",
-    type: "string",
-    flex: 1.5,
-    editable: false,
-    align: "center",
-    headerAlign: "center",
-  },
-];
-
-const tarih = new Date();
-
-// Türkçe tarih ve saat formatı
-const turkceTarih = tarih.toLocaleString("tr-TR", {
-  dateStyle: "long", // Uzun tarih formatı: "24 Ocak 2025"
-  timeStyle: "short", // Kısa saat formatı: "13:45"
-});
-
-const rows = [
-  {
-    id: 1,
-    name: "Emin Cürmen",
-    dateCreated: turkceTarih,
-    dersDetay: "Matematik Logaritma",
-  },
-  {
-    id: 2,
-    name: "Emin Cürmen",
-    dateCreated: "2015-03-25",
-    dersDetay: "Critical Thinking",
-  },
-  {
-    id: 3,
-    name: "Emin Cürmen",
-    dateCreated: "2015-03-25",
-    dersDetay: "Critical Thinking",
-  },
-  {
-    id: 4,
-    name: "Emin Cürmen",
-    dateCreated: "2015-03-25",
-    dersDetay: "Critical Thinking",
-  },
-];
-
-// CSS ile üstü çizme efekti
-document.styleSheets[0].insertRule(
-  `.strikethrough .MuiDataGrid-cell { text-decoration: line-through; }`,
-  document.styleSheets[0].cssRules.length
-);
+export default App;
