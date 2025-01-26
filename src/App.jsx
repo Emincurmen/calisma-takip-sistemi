@@ -48,28 +48,28 @@ const App = () => {
     }
   };
 
-  const handleCheckboxChange = (id) => {
+  const handleCheckboxChange = async (id) => {
     const updatedData = data.map((row) => {
       if (row.id === id) {
-        row.isSelected = !row.isSelected;
+        return { ...row, isSelected: !row.isSelected };
       }
       return row;
     });
-
+  
+    const updatedUser = updatedData.find((row) => row.id === id);
+  
     setData(updatedData);
-    setSelectedId(id);
-
-    // Update the selection state on the server
-    axios.patch(`${API_URL}?id=${id}`, { isSelected: !data.find((row) => row.id === id).isSelected })
-      .then(response => {
-        console.log("Updated user:", response.data);
-      })
-      .catch(error => {
-        console.error("Error updating user:", error);
-      });
+  
+    try {
+      await axios.put(`${API_URL}?id=${id}`, updatedUser);
+      console.log("Updated user:", updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
   };
+  
 
-  const columns = [,
+  const columns = [
     {
       field: "checkbox",
       headerName: "Seçim",
@@ -102,7 +102,7 @@ const App = () => {
 
   return (
     <div style={{ padding: 20, maxWidth: "375px", margin: "0 auto" }}>
-      <h1>Kullanıcı Yönetim Sistemi</h1>
+      <h1>Ders Takip Sistemi</h1>
 
       <div style={{ marginBottom: 20, display: "flex", gap: 10, flexDirection: "column" }}>
         <TextField
