@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Button, TextField, Checkbox, FormControlLabel } from "@mui/material";
+import { Button, Chip, TextField, Autocomplete } from "@mui/material";
 import axios from "axios";
-import moment from "moment-timezone"; // moment-timezone'u doğrudan import edin.
+import dayjs from "dayjs";
+import "dayjs/locale/tr";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-console.log(moment().tz("Europe/Istanbul").format("D MMM YYYY HH:mm"))
+dayjs.locale("tr"); // Türkçe ayarla
 
-const API_URL = "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
+const API_URL =
+  "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
 
 const App = () => {
   const [data, setData] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
-    dateCreated: new Date().toLocaleString("tr-TR"),
-    dersDetay: "",
-    isSelected: false,
+    dateCreated: "",
+    lastDate: dayjs(),
+    konuBasligi: "",
+    konuDetayi: "",
+    status: "todo",
   });
-  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -42,107 +47,131 @@ const App = () => {
       setData([...data, response.data]);
       setFormData({
         name: "",
-        dateCreated: new Date().toLocaleString("tr-TR"),
-        dersDetay: "",
-        isSelected: false,
+        dateCreated: "",
+        lastDate: dayjs(),
+        konuBasligi: "",
+        konuDetayi: "",
+        status: "todo",
       });
     } catch (error) {
       console.error("Error adding user:", error);
     }
   };
 
-  const handleCheckboxChange = async (id) => {
-    const updatedData = data.map((row) => {
-      if (row.id === id) {
-        return { ...row, isSelected: !row.isSelected };
-      }
-      return row;
-    });
-  
-    const updatedUser = updatedData.find((row) => row.id === id);
-  
-    setData(updatedData);
-  
-    try {
-      await axios.put(`${API_URL}?id=${id}`, updatedUser);
-      console.log("Updated user:", updatedUser);
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
-  };
-  
-
   const columns = [
     {
       field: "checkbox",
-      headerName: "Seçim",
+      headerName: "Status",
       width: 100,
-      renderCell: (params) => (
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={params.row.isSelected}
-              onChange={() => handleCheckboxChange(params.row.id)}
-            />
-          }
-        />
-      ),
+      renderCell: ({ row }) => {
+        return (
+          <Chip
+            rounded
+            skin="light"
+            size="small"
+            label={
+              row.status === "finish"
+                ? "Finished"
+                : row.status === "progress"
+                ? "in progress"
+                : "To Do"
+            }
+            color={
+              row.status === "finish"
+                ? "success"
+                : row.status === "progress"
+                ? "primary"
+                : "secondary"
+            }
+          />
+        );
+      },
     },
     { field: "id", headerName: "ID", width: 90 },
-    { field: "name", headerName: "Ad Soyad", width: 200 },
-    { field: "dateCreated", headerName: "Oluşturma Tarihi", width: 200 },
+    { field: "name", headerName: "Atanan Kişi", width: 200 },
     {
-      field: "dersDetay",
-      headerName: "Ders Detayı",
+      field: "konuBasligi",
+      headerName: "Konu Başlığı",
       width: 250,
       renderCell: (params) => (
-        <div style={{ textDecoration: params.row.isSelected ? "line-through" : "none" }}>
-          {params.row.dersDetay}
+        <div
+          style={{
+            textDecoration: params.row.isSelected ? "line-through" : "none",
+          }}
+        >
+          {params.row.konuBasligi}
         </div>
       ),
+    },
+    {
+      field: "dateCreated",
+      headerName: "Oluşturma Tarihi",
+      width: 200,
+      renderCell: (params) =>
+        dayjs(params.row.dateCreated).format("D MMM YY HH:mm"),
     },
   ];
 
   return (
-    <div style={{ padding: 20, maxWidth: "375px", margin: "0 auto" }}>
+    <div style={{ padding: 20, margin: "0 auto" }}>
       <h1>Ders Takip Sistemi</h1>
 
-      <div style={{ marginBottom: 20, display: "flex", gap: 10, flexDirection: "column" }}>
+      <div
+        style={{
+          marginBottom: 20,
+          display: "flex",
+          gap: 10,
+          flexDirection: "column",
+        }}
+      >
         <TextField
-          label="Ad Soyad"
+          label="Atanacak Kişi"
           name="name"
           value={formData.name}
           onChange={handleInputChange}
           fullWidth
         />
         <TextField
-          label="Ders Detayı"
-          name="dersDetay"
-          value={formData.dersDetay}
+          label="Konu Başlığı"
+          name="konuBasligi"
+          value={formData.konuBasligi}
           onChange={handleInputChange}
           fullWidth
         />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <TextField
+            label="Başlangıç Tarihi"
+            value={dayjs().format("YYYY-MM-DD")}
+            disabled
+          />
+          <DatePicker
+            label="Bitiş Tarihi Seç"
+            value={formData.lastDate}
+            onChange={handleInputChange}
+            minDate={dayjs()} // Bitiş tarihi bugünden önce olamaz
+            renderInput={(params) => <TextField {...params} />}
+          />
+        </LocalizationProvider>
+        {/* <Autocomplete
+          disablePortal
+          options={deadLineOptions}
+          sx={{ width: 300 }}
+          renderInput={(params) => <TextField {...params} label="Movie" />}
+        /> */}
         <Button variant="contained" onClick={handleAddUser} fullWidth>
           Çalışma Ekle
         </Button>
       </div>
 
       <div style={{ height: 400, width: "100%" }}>
-        <DataGrid rows={data} columns={columns} pageSize={5} disableSelectionOnClick />
+        <DataGrid
+          rows={data}
+          columns={columns}
+          pageSize={5}
+          disableSelectionOnClick
+          disableColumnMenu
+        />
       </div>
-
-      {selectedId && (
-        <div style={{ marginTop: 20 }}>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => handleCheckboxChange(selectedId)}
-            fullWidth
-          >
-            Değişikliği Gönder
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
