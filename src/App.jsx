@@ -18,7 +18,7 @@ const App = () => {
   const [formData, setFormData] = useState({
     name: "",
     dateCreated: "",
-    lastDate: dayjs(),
+    lastDate: null,
     konuBasligi: "",
     konuDetayi: "",
     status: "todo",
@@ -55,7 +55,7 @@ const App = () => {
       setFormData({
         name: "",
         dateCreated: "",
-        lastDate: dayjs(),
+        lastDate:null,
         konuBasligi: "",
         konuDetayi: "",
         status: "todo",
@@ -123,6 +123,7 @@ const App = () => {
       headerName: "Son Tarih",
       width: 200,
       renderCell: (params) =>
+        params.row.lastDate === "-" ? "-":
         dayjs(params.row.lastDate).from(dayjs(params.row.dateCreated)),
     },
   ];
@@ -161,6 +162,7 @@ const App = () => {
             inputProps={{ "aria-label": "controlled" }}
           />
         </div>
+        
         {isSwitchChecked ? (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
@@ -171,9 +173,7 @@ const App = () => {
               renderInput={(params) => <TextField {...params} />}
             />
           </LocalizationProvider>
-        ) : (
-          ""
-        )}
+        ) : formData.lastDate = "-"}
         <Button variant="contained" onClick={handleAddUser} fullWidth>
           Çalışma Ekle
         </Button>
