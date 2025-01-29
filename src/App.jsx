@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Button, Chip, TextField, Autocomplete } from "@mui/material";
+import { Button, Chip, TextField, Switch } from "@mui/material";
 import axios from "axios";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
+import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.locale("tr"); // Türkçe ayarla
 
 const API_URL =
   "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
 
 const App = () => {
+  const [isSwitchChecked, setIsSwitchChecked] = useState(true);
   const [data, setData] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -22,7 +23,9 @@ const App = () => {
     konuDetayi: "",
     status: "todo",
   });
-
+  const handleSwitchChange = (event) => {
+    setIsSwitchChecked(event.target.checked);
+  };
   useEffect(() => {
     fetchData();
   }, []);
@@ -41,6 +44,10 @@ const App = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleDateChange = (date) => {
+    setFormData({ ...formData, lastDate: date });
+  };
+
   const handleAddUser = async () => {
     try {
       const response = await axios.post(API_URL, formData);
@@ -57,6 +64,7 @@ const App = () => {
       console.error("Error adding user:", error);
     }
   };
+  dayjs.extend(relativeTime);
 
   const columns = [
     {
@@ -110,6 +118,13 @@ const App = () => {
       renderCell: (params) =>
         dayjs(params.row.dateCreated).format("D MMM YY HH:mm"),
     },
+    {
+      field: "lastDate",
+      headerName: "Son Tarih",
+      width: 200,
+      renderCell: (params) =>
+        dayjs(params.row.lastDate).from(dayjs(params.row.dateCreated)),
+    },
   ];
 
   return (
@@ -138,26 +153,27 @@ const App = () => {
           onChange={handleInputChange}
           fullWidth
         />
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <TextField
-            label="Başlangıç Tarihi"
-            value={dayjs().format("YYYY-MM-DD")}
-            disabled
+        <div>
+          <span style={{fontSize:"18px",fontFamily:"poppins",paddingRight:"10px"}}>bitiş tarihi ekle</span>
+          <Switch
+            checked={isSwitchChecked}
+            onChange={handleSwitchChange}
+            inputProps={{ "aria-label": "controlled" }}
           />
-          <DatePicker
-            label="Bitiş Tarihi Seç"
-            value={formData.lastDate}
-            onChange={handleInputChange}
-            minDate={dayjs()} // Bitiş tarihi bugünden önce olamaz
-            renderInput={(params) => <TextField {...params} />}
-          />
-        </LocalizationProvider>
-        {/* <Autocomplete
-          disablePortal
-          options={deadLineOptions}
-          sx={{ width: 300 }}
-          renderInput={(params) => <TextField {...params} label="Movie" />}
-        /> */}
+        </div>
+        {isSwitchChecked ? (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="Bitiş Tarihi Seç"
+              value={formData.lastDate}
+              onChange={handleDateChange} // handleDateChange ile date'yi al
+              minDate={dayjs()} // Bitiş tarihi bugünden önce olamaz
+              renderInput={(params) => <TextField {...params} />}
+            />
+          </LocalizationProvider>
+        ) : (
+          ""
+        )}
         <Button variant="contained" onClick={handleAddUser} fullWidth>
           Çalışma Ekle
         </Button>
