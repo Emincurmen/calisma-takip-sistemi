@@ -6,7 +6,7 @@ import NotFoundPage from './NotFoundPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {/* <App /> */}
-    <NotFoundPage/>
+    <App />
+    {/* <NotFoundPage/> */}
   </StrictMode>,
 )

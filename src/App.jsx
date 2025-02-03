@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Button, Chip, TextField, Switch, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select } from "@mui/material";
+import {
+  Button,
+  Chip,
+  TextField,
+  Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Select,
+} from "@mui/material";
 import axios from "axios";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
@@ -8,10 +19,11 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
-dayjs.locale("tr"); // Türkçe ayarla
+dayjs.locale("tr");
 dayjs.extend(relativeTime);
 
-const API_URL = "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
+const API_URL =
+  "https://json-server-api-git-main-emins-projects-6a745c3d.vercel.app/api/users";
 
 const App = () => {
   const [isSwitchChecked, setIsSwitchChecked] = useState(true);
@@ -42,19 +54,6 @@ const App = () => {
     }
   };
 
-  const handleSwitchChange = (event) => {
-    setIsSwitchChecked(event.target.checked);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleDateChange = (date) => {
-    setFormData({ ...formData, lastDate: date });
-  };
-
   const handleAddUser = async () => {
     try {
       const response = await axios.post(API_URL, formData);
@@ -82,17 +81,13 @@ const App = () => {
     if (!selectedRow) return;
 
     try {
-      await axios.patch(`${API_URL}/${selectedRow.id}`, { status: newStatus });
-
-      setData((prevData) =>
-        prevData.map((item) =>
-          item.id === selectedRow.id ? { ...item, status: newStatus } : item
-        )
-      );
-
+      const response = await axios.get(`${API_URL}?id=${selectedRow.id}`);
+      const updatedData = { ...response.data, status: newStatus };
+      await axios.put(`${API_URL}?id=${selectedRow.id}`, updatedData);
+      fetchData();
       setOpen(false);
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating status: emin", error);
     }
   };
 
@@ -118,22 +113,19 @@ const App = () => {
               : "secondary"
           }
           onClick={() => handleChipClick(row)}
-          style={{ cursor: "pointer" }}
+          style={{ cursor: "pointer", width:"8vw"}}
         />
       ),
     },
     { field: "id", headerName: "ID", width: 90 },
     { field: "name", headerName: "Atanan Kişi", width: 200 },
-    {
-      field: "konuBasligi",
-      headerName: "Konu Başlığı",
-      width: 250,
-    },
+    { field: "konuBasligi", headerName: "Konu Başlığı", width: 250 },
     {
       field: "dateCreated",
       headerName: "Oluşturma Tarihi",
       width: 200,
-      renderCell: (params) => dayjs(params.row.dateCreated).format("D MMM YY HH:mm"),
+      renderCell: (params) =>
+        dayjs(params.row.dateCreated).format("D MMM YY HH:mm"),
     },
     {
       field: "lastDate",
@@ -149,41 +141,77 @@ const App = () => {
   return (
     <div style={{ padding: 20, margin: "0 auto" }}>
       <h1>Ders Takip Sistemi</h1>
-
-      <div style={{ marginBottom: 20, display: "flex", gap: 10, flexDirection: "column" }}>
-        <TextField label="Atanacak Kişi" name="name" value={formData.name} onChange={handleInputChange} fullWidth />
-        <TextField label="Konu Başlığı" name="konuBasligi" value={formData.konuBasligi} onChange={handleInputChange} fullWidth />
+      <div
+        style={{
+          marginBottom: 20,
+          display: "flex",
+          gap: 10,
+          flexDirection: "column",
+        }}
+      >
+        <TextField
+          label="Atanacak Kişi"
+          name="name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          fullWidth
+        />
+        <TextField
+          label="Konu Başlığı"
+          name="konuBasligi"
+          value={formData.konuBasligi}
+          onChange={(e) =>
+            setFormData({ ...formData, konuBasligi: e.target.value })
+          }
+          fullWidth
+        />
         <div>
-          <span style={{ fontSize: "18px", fontFamily: "poppins", paddingRight: "10px" }}>Bitiş Tarihi Ekle</span>
-          <Switch checked={isSwitchChecked} onChange={handleSwitchChange} inputProps={{ "aria-label": "controlled" }} />
+          <span
+            style={{
+              fontSize: "18px",
+              fontFamily: "poppins",
+              paddingRight: "10px",
+            }}
+          >
+            Bitiş Tarihi Ekle
+          </span>
+          <Switch
+            checked={isSwitchChecked}
+            onChange={() => setIsSwitchChecked(!isSwitchChecked)}
+          />
         </div>
-
         {isSwitchChecked && (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Bitiş Tarihi Seç"
               value={formData.lastDate}
-              onChange={handleDateChange}
+              onChange={(date) => setFormData({ ...formData, lastDate: date })}
               minDate={dayjs()}
               renderInput={(params) => <TextField {...params} />}
             />
           </LocalizationProvider>
         )}
-
         <Button variant="contained" onClick={handleAddUser} fullWidth>
           Çalışma Ekle
         </Button>
       </div>
-
       <div style={{ height: 400, width: "100%" }}>
-        <DataGrid rows={data} columns={columns} pageSize={5} disableSelectionOnClick disableColumnMenu />
+        <DataGrid
+          rows={data}
+          columns={columns}
+          pageSize={5}
+          disableSelectionOnClick
+          disableColumnMenu
+        />
       </div>
-
-      {/* Status Güncelleme Modali */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Status Güncelle</DialogTitle>
         <DialogContent>
-          <Select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} fullWidth>
+          <Select
+            value={newStatus}
+            onChange={(e) => setNewStatus(e.target.value)}
+            fullWidth
+          >
             <MenuItem value="todo">To Do</MenuItem>
             <MenuItem value="progress">In Progress</MenuItem>
             <MenuItem value="finish">Finished</MenuItem>
