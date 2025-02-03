@@ -113,7 +113,7 @@ const App = () => {
               : "secondary"
           }
           onClick={() => handleChipClick(row)}
-          style={{ cursor: "pointer", width:"8vw"}}
+          style={{ cursor: "pointer", width:"80%"}}
         />
       ),
     },
