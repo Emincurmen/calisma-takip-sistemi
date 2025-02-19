@@ -11,6 +11,7 @@ import {
   DialogActions,
   MenuItem,
   Select,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -131,11 +132,17 @@ const App = () => {
       field: "lastDate",
       headerName: "Son Tarih",
       width: 200,
-      renderCell: (params) =>
-        params.row.lastDate
-          ? dayjs(params.row.lastDate).from(dayjs(params.row.dateCreated))
-          : "-",
-    },
+      renderCell: (params) => {
+        if (!params.row.lastDate) return "-";
+    
+        const isPast = dayjs().isAfter(params.row.lastDate);
+        return (
+          <span style={{ color: isPast ? "red" : "inherit", fontSize: 14.5, }}>
+            {dayjs(params.row.lastDate).from(dayjs())}
+          </span>
+        );
+      },
+    }    
   ];
 
   return (
@@ -199,6 +206,7 @@ const App = () => {
         <DataGrid
           rows={data}
           columns={columns}
+          pageSizeOptions={[5,10,25,50]}
           pageSize={5}
           disableSelectionOnClick
           disableColumnMenu
